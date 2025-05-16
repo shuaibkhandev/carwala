@@ -1,16 +1,16 @@
-const { default: slugify } = require("slugify")
-const carModel = require("../models/carModel")
-const orderModel = require("../models/orderModel")
-const fs = require('fs')
+const slugify = require("slugify");
+const carModel = require("../models/carModel");
+const orderModel = require("../models/orderModel");
+const fs = require('fs');
 const braintree = require("braintree");
-const dotenv = require('dotenv')
+const dotenv = require('dotenv');
 const brandModel = require("../models/carBrand");
-const multer  = require('multer')
-const path = require('path')
-const { google } = require('googleapis');
+const multer = require('multer');
+const path = require('path');
 
-dotenv.config()
+dotenv.config();
 
+// Braintree setup
 var gateway = new braintree.BraintreeGateway({
     environment: braintree.Environment.Sandbox,
     merchantId: process.env.BRAINTREE_MERCHANT_ID,
@@ -18,9 +18,10 @@ var gateway = new braintree.BraintreeGateway({
     privateKey: process.env.BRAINTREE_PRIVATE_KEY
 });
 
+// Multer setup for local uploads
 const storage = multer.diskStorage({
     destination: (req, file, cb) => {
-        cb(null, 'uploads/');
+        cb(null, 'uploads/'); // Ensure this folder exists
     },
     filename: (req, file, cb) => {
         cb(null, Date.now() + '-' + file.originalname);
@@ -28,50 +29,28 @@ const storage = multer.diskStorage({
 });
 const upload = multer({ storage });
 
-const KEYFILEPATH = path.join(__dirname, 'cred.json');
-const SCOPES = ['https://www.googleapis.com/auth/drive'];
-
-const auth = new google.auth.GoogleAuth({
-    keyFile: KEYFILEPATH,
-    scopes: SCOPES,
-});
-
-const drive = google.drive({ version: 'v3', auth });
-
-const FOLDER_ID = "1LbbwJK78fjf_ZWYc1HZF5SwwU6reXomQ"; 
-
-const uploadFileToGoogleDrive = async (filePath, fileName) => {
-    const fileMetadata = {
-        name: fileName,
-        parents: [FOLDER_ID], 
-    };
-    const media = {
-        mimeType: 'image/jpeg', 
-        body: fs.createReadStream(filePath),
-    };
-    const response = await drive.files.create({
-        resource: fileMetadata,
-        media: media,
-        fields: 'webViewLink',
-    });
-    return response.data;
-};
-
+// Create Car with local images
 const createCar = async (req, res) => {
     try {
-        const { name, description, brand, price, fuelType, transmission, engineSize, mileage, safetyrating, warranty, seater, size, fuelTank } = req.body;
+        const {
+            name, description, brand, price, fuelType,
+            transmission, engineSize, mileage, safetyrating,
+            warranty, seater, size, fuelTank
+        } = req.body;
 
-        const requiredFields = ['name', 'description', 'brand', 'price', 'fuelType', 'transmission', 'engineSize', 'mileage', 'safetyrating', 'warranty', 'seater', 'size', 'fuelTank'];
+        const requiredFields = [
+            'name', 'description', 'brand', 'price', 'fuelType', 'transmission',
+            'engineSize', 'mileage', 'safetyrating', 'warranty', 'seater', 'size', 'fuelTank'
+        ];
+
         for (let field of requiredFields) {
             if (!req.body[field]) {
-                return res.status(400).send({ success: false, message: `${field} is Required` });
+                return res.status(400).send({ success: false, message: `${field} is required` });
             }
         }
 
-        const uploadedFiles = await Promise.all(req.files.map(async (file) => {
-            const result = await uploadFileToGoogleDrive(file.path, file.filename);
-            return result.webViewLink;
-        }));
+        // Store local file paths
+        const uploadedFiles = req.files.map(file => file.path);
 
         const slug = slugify(name);
 
@@ -95,159 +74,139 @@ const createCar = async (req, res) => {
 
         await car.save();
 
+        // Associate car with brand
         const category = await brandModel.findById(brand);
         category.carInvoleInThisBrand.push(car);
         await category.save();
 
         res.status(201).send({
             success: true,
-            message: 'Car Created Successfully',
+            message: 'Car created successfully',
             car
         });
     } catch (err) {
         console.error(err);
         res.status(500).send({
             success: false,
-            message: "Error in creating Car",
+            message: "Error in creating car",
             error: err.message
         });
     }
 };
 
-const getDriveFileId = (url) => {
-    const regex = /\/d\/([a-zA-Z0-9_-]+)\//;
-    const match = url.match(regex);
-    return match ? match[1] : null;
-};
-
+// Get all cars
 const getAllCar = async (req, res) => {
     try {
         const cars = await carModel.find({}).populate('brand');
-
-        const updatedCars = cars.map(car => {
-            car.productPictures = car.productPictures.map(picture => {
-                const fileId = getDriveFileId(picture);
-                return fileId ? `https://lh3.googleusercontent.com/d/${fileId}=w1000?authuser=0` : picture;
-            });
-
-            if (car.brand && car.brand.brandPictures) {
-                const fileId = getDriveFileId(car.brand.brandPictures);
-                car.brand.brandPictures = fileId ? `https://lh3.googleusercontent.com/d/${fileId}=w1000?authuser=0` : car.brand.brandPictures;
-            }
-
-            return car;
-        });
-
         res.status(200).send({
             success: true,
-            totalCar: updatedCars.length,
+            totalCar: cars.length,
             message: "All cars",
-            cars: updatedCars
+            cars
         });
     } catch (err) {
         res.status(500).send({
             success: false,
-            message: "Error in Getting Car",
+            message: "Error in getting cars",
             error: err.message
         });
     }
 };
 
+// Get single car by slug
 const getCarById = async (req, res) => {
     try {
         const car = await carModel.findOne({ slug: req.params.slug }).populate('brand');
 
-        if (car) {
-            car.productPictures = car.productPictures.map(picture => {
-                const fileId = getDriveFileId(picture);
-                return fileId ? `https://lh3.googleusercontent.com/d/${fileId}=w1000?authuser=0` : picture;
-            });
-
-            if (car.brand && car.brand.brandPictures) {
-                const fileId = getDriveFileId(car.brand.brandPictures);
-                car.brand.brandPictures = fileId ? `https://lh3.googleusercontent.com/d/${fileId}=w1000?authuser=0` : car.brand.brandPictures;
-            }
-        }
-
         res.status(200).send({
             success: true,
-            message: "Car By this Id",
+            message: "Car by this ID",
             car
         });
     } catch (err) {
         res.status(500).send({
             success: false,
-            message: "Error in Finding Car Id",
+            message: "Error in finding car",
             err
         });
     }
-}
+};
 
-const deleteCar = async (req,res) => {
-    try{
-        const carModel_ = await carModel.findById(req.params.pid)
-        try{
-            for(const x of carModel_.productPictures){
-                fs.unlink(path.join(__dirname, '../uploads/',x), (err)=> {
-                    if(err){
-                        throw err;
+// Delete a car and its local images
+const deleteCar = async (req, res) => {
+    try {
+        const carDoc = await carModel.findById(req.params.pid);
+        try {
+            for (const imagePath of carDoc.productPictures) {
+                fs.unlink(path.resolve(imagePath), (err) => {
+                    if (err) {
+                        console.error("Error deleting image:", err);
                     }
-                })
+                });
             }
-        }catch(e){
-            console.log("Delte: " +e)
+        } catch (e) {
+            console.log("Delete: " + e);
         }
-        await carModel.findByIdAndDelete(req.params.pid)
+        await carModel.findByIdAndDelete(req.params.pid);
         res.status(200).send({
-            success:true,
-            message:"Car Deleted Successfully"
+            success: true,
+            message: "Car deleted successfully"
         });
-    }catch(err){
+    } catch (err) {
         res.status(500).send({
-            success:false,
-            message:"Error in Deleting Car",
+            success: false,
+            message: "Error in deleting car",
             err
-        })
+        });
     }
-}
+};
 
-const updatecar = async (req,res) => {
-    try{
-        const {name,description,fuelType,transmission,engineSize,mileage,safetyrating,warranty,seater,size,fuelTank,price} = req.fields
+// Update car (text fields only)
+const updatecar = async (req, res) => {
+    try {
+        const {
+            name, description, fuelType, transmission,
+            engineSize, mileage, safetyrating, warranty,
+            seater, size, fuelTank, price
+        } = req.fields;
 
-        switch(true){
-            case !name : return res.send({message:"Name is required"})
-            case !description : return res.send({message:"Description is required"})
-            case !price : return res.send({message:"Price is required"})
-            case !fuelType : return res.send({message:"FuelType is required"})
-            case !transmission : return res.send({message:"Transmission is required"})
-            case !engineSize : return res.send({message:"EngineSize is required"})
-            case !mileage : return res.send({message:"Mileage is required"})
-            case !safetyrating : return res.send({message:"Safetyrating is required"})
-            case !warranty : return res.send({message:"Warranty is required"})
-            case !seater : return res.send({message:"Seater is required"})
-            case !size : return res.send({message:"Size is required"})
-            case !fuelTank : return res.send({message:"Fuel Tank is required"})
+        switch (true) {
+            case !name: return res.send({ message: "Name is required" });
+            case !description: return res.send({ message: "Description is required" });
+            case !price: return res.send({ message: "Price is required" });
+            case !fuelType: return res.send({ message: "FuelType is required" });
+            case !transmission: return res.send({ message: "Transmission is required" });
+            case !engineSize: return res.send({ message: "EngineSize is required" });
+            case !mileage: return res.send({ message: "Mileage is required" });
+            case !safetyrating: return res.send({ message: "Safetyrating is required" });
+            case !warranty: return res.send({ message: "Warranty is required" });
+            case !seater: return res.send({ message: "Seater is required" });
+            case !size: return res.send({ message: "Size is required" });
+            case !fuelTank: return res.send({ message: "Fuel Tank is required" });
         }
 
-        const car = await carModel.findByIdAndUpdate(req.params.pid,{...req.fields,slug:slugify(name)},{new:true})
+        const car = await carModel.findByIdAndUpdate(
+            req.params.pid,
+            { ...req.fields, slug: slugify(name) },
+            { new: true }
+        );
 
-        await car.save()
         res.status(201).send({
-            success:true,
-            message:'Car Updated Successfully',
+            success: true,
+            message: 'Car updated successfully',
             car
-        })
-    }catch(err){
-        console.log(err)
+        });
+    } catch (err) {
+        console.log(err);
         res.status(500).send({
-            success:false,
-            message:"Error in Updating Car",
+            success: false,
+            message: "Error in updating car",
             err
-        })
+        });
     }
-}
+};
 
+// Related cars by brand
 const relatedCar = async (req, res) => {
     try {
         const { cid, bid } = req.params;
@@ -256,77 +215,78 @@ const relatedCar = async (req, res) => {
             _id: { $ne: cid }
         }).populate('brand');
 
-        cars.forEach(car => {
-            car.productPictures = car.productPictures.map(picture => {
-                const fileId = getDriveFileId(picture);
-                return fileId ? `https://lh3.googleusercontent.com/d/${fileId}=w1000?authuser=0` : picture;
-            });
-
-            if (car.brand && car.brand.brandPictures) {
-                const fileId = getDriveFileId(car.brand.brandPictures);
-                car.brand.brandPictures = fileId ? `https://lh3.googleusercontent.com/d/${fileId}=w1000?authuser=0` : car.brand.brandPictures;
-            }
-        });
-
         res.status(200).send({
             success: true,
-            message: 'Related Cars for this Brand',
+            message: 'Related cars for this brand',
             cars
         });
     } catch (err) {
         res.status(400).send({
             success: false,
-            message: "Error While Fetching Related Cars",
+            message: "Error while fetching related cars",
             err
         });
     }
-}
+};
 
-const braintreeTokenController = async(req,res) => {
+// Braintree token
+const braintreeTokenController = async (req, res) => {
     try {
         gateway.clientToken.generate({}, function (err, response) {
-          if (err) {
-            res.status(500).send(err);
-          } else {
-            res.send(response);
-          }
+            if (err) {
+                res.status(500).send(err);
+            } else {
+                res.send(response);
+            }
         });
-      } catch (error) {
+    } catch (error) {
         console.log(error);
-      }
-}
+    }
+};
 
-const brainTreePaymentController = async (req,res) => {
+// Braintree payment
+const brainTreePaymentController = async (req, res) => {
     try {
         const { nonce, cart } = req.body;
         let total = 0;
         cart.map((i) => {
-          total += i.price;
+            total += i.price;
         });
-        let newTransaction = gateway.transaction.sale(
-          {
-            amount: total,
-            paymentMethodNonce: nonce,
-            options: {
-              submitForSettlement: true,
-            },
-          },
-          function (error, result) {
-            if (result) {
-              const order = new orderModel({
-                products: cart,
-                payment: result,
-                buyer: req.user._id,
-              }).save();
-              res.json({ ok: true });
-            } else {
-              res.status(500).send(error);
-            }
-          }
-        );
-      } catch (error) {
-        console.log(error);
-      }
-}
 
-module.exports = {upload,createCar,getAllCar,getCarById,deleteCar,updatecar,relatedCar,braintreeTokenController,brainTreePaymentController}
+        gateway.transaction.sale(
+            {
+                amount: total,
+                paymentMethodNonce: nonce,
+                options: {
+                    submitForSettlement: true,
+                },
+            },
+            function (error, result) {
+                if (result) {
+                    const order = new orderModel({
+                        products: cart,
+                        payment: result,
+                        buyer: req.user._id,
+                    }).save();
+                    res.json({ ok: true });
+                } else {
+                    res.status(500).send(error);
+                }
+            }
+        );
+    } catch (error) {
+        console.log(error);
+    }
+};
+
+module.exports = {
+    upload,
+    createCar,
+    getAllCar,
+    getCarById,
+    deleteCar,
+    updatecar,
+    relatedCar,
+    braintreeTokenController,
+    brainTreePaymentController
+};

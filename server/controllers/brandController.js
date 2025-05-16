@@ -1,13 +1,12 @@
-const { default: slugify } = require('slugify');
+const slugify = require('slugify');
 const brandModel = require('../models/carBrand');
-const fs = require('fs');
-const path = require('path');
 const multer = require('multer');
-const { google } = require('googleapis');
+const path = require('path');
 
+// Setup multer for local image upload
 const storage = multer.diskStorage({
     destination: (req, file, cb) => {
-        cb(null, 'uploads/');
+        cb(null, 'uploads/'); // Make sure this folder exists
     },
     filename: (req, file, cb) => {
         cb(null, Date.now() + '-' + file.originalname);
@@ -15,195 +14,143 @@ const storage = multer.diskStorage({
 });
 const upload = multer({ storage });
 
-const KEYFILEPATH = path.join(__dirname, 'cred.json');
-const SCOPES = ['https://www.googleapis.com/auth/drive'];
-
-const auth = new google.auth.GoogleAuth({
-    keyFile: KEYFILEPATH,
-    scopes: SCOPES,
-});
-
-const drive = google.drive({ version: 'v3', auth });
-
-const FOLDER_ID = "1QPzzSYvS6vm1rjLoi7vy51HuW8OrIL0t"; 
-
-const uploadFileToGoogleDrive = async (filePath, fileName) => {
-    const fileMetadata = {
-        name: fileName,
-        parents: [FOLDER_ID], 
-    };
-    const media = {
-        mimeType: 'image/jpeg', 
-        body: fs.createReadStream(filePath),
-    };
-    const response = await drive.files.create({
-        resource: fileMetadata,
-        media: media,
-        fields: 'webViewLink',
-    });
-    return response.data;
-};
-
+// Create brand with image
 const createBrand = async (req, res) => {
     try {
         const { name } = req.body;
-        const brandPictures = req.file.path;
+        const brandPicturePath = req.file?.path;
 
         if (!name) {
-            return res.send({ message: 'Brand Name is Required' });
-        }
-        if (!brandPictures) {
-            return res.send({ message: 'Brand Image is Required' });
+            return res.status(400).send({ message: 'Brand name is required' });
         }
 
-        if (!name || !brandPictures) {
-            return res.send({ message: 'Please fill all the fields' });
+        if (!brandPicturePath) {
+            return res.status(400).send({ message: 'Brand image is required' });
         }
 
-        const existCategory = await brandModel.findOne({ name });
-
-        if (existCategory) {
+        const existing = await brandModel.findOne({ name });
+        if (existing) {
             return res.status(200).send({
                 success: true,
-                message: 'Name is Already Exist',
+                message: 'Brand name already exists',
             });
         }
 
-        const driveResponse = await uploadFileToGoogleDrive(brandPictures, req.file.filename);
+        const brand = new brandModel({
+            name,
+            slug: slugify(name),
+            brandPictures: brandPicturePath,
+        });
 
-        fs.unlinkSync(brandPictures);
-
-        const brand = new brandModel({ name, brandPictures: driveResponse.webViewLink, slug: slugify(name) });
         await brand.save();
         res.status(201).send({
             success: true,
-            message: 'Brand Created Successfully',
+            message: 'Brand created successfully',
             brand,
         });
     } catch (err) {
         res.status(500).send({
             success: false,
-            message: 'Error in creating Brand',
+            message: 'Error in creating brand',
             err,
         });
     }
 };
 
-const getDriveFileId = (url) => {
-    const regex = /\/d\/([a-zA-Z0-9_-]+)\//;
-    const match = url.match(regex);
-    return match ? match[1] : null;
-};
-
+// Get all brands
 const getBrand = async (req, res) => {
     try {
-        const brands = await brandModel.find({}).populate('carInvoleInThisBrand');
-
-        const updatedBrands = brands.map(brand => {
-            const fileId = getDriveFileId(brand.brandPictures);
-            if (fileId) {
-                brand.brandPictures = `https://lh3.googleusercontent.com/d/${fileId}=w1000?authuser=0`;
-            }
-            return brand;
-        });
-
+        const brands = await brandModel.find({});
         res.status(200).send({
             success: true,
-            totalBrand: updatedBrands.length,
-            message: "All Brands",
-            brands: updatedBrands
+            totalBrand: brands.length,
+            message: 'All Brands',
+            brands,
         });
     } catch (err) {
         res.status(500).send({
             success: false,
-            message: "Error in Getting Brand",
-            err
+            message: 'Error in getting brands',
+            err,
         });
     }
 };
 
+// Get brand by slug
 const getBrandById = async (req, res) => {
     try {
-        const brand = await brandModel.findOne({ slug: req.params.slug }).populate('carInvoleInThisBrand');
+        const brand = await brandModel.findOne({ slug: req.params.slug });
 
         if (!brand) {
             return res.status(404).send({
                 success: false,
-                message: "Brand not found"
+                message: 'Brand not found',
             });
         }
 
-        const convertDriveUrl = (url) => {
-            const fileId = getDriveFileId(url);
-            return fileId ? `https://lh3.googleusercontent.com/d/${fileId}=w1000?authuser=0` : url;
-        };
-
-        brand.brandPictures = convertDriveUrl(brand.brandPictures);
-
-        brand.carInvoleInThisBrand.forEach(car => {
-            car.productPictures = car.productPictures.map(picture => convertDriveUrl(picture));
-        });
-
         res.status(200).send({
             success: true,
-            message: "Brand By this Id",
-            brand
+            message: 'Brand found',
+            brand,
         });
     } catch (err) {
         res.status(500).send({
             success: false,
-            message: "Error in Finding Brand Id",
-            err
+            message: 'Error in getting brand',
+            err,
         });
     }
 };
 
-const updateBrand = async (req,res) => {
-    try{
-        const {name} = req.body
-        const {id} = req.params
+// Update brand name only
+const updateBrand = async (req, res) => {
+    try {
+        const { name } = req.body;
+        const { id } = req.params;
 
-        const brand = await brandModel.findByIdAndUpdate(id,{name,slug:slugify(name)},{new:true})
+        const brand = await brandModel.findByIdAndUpdate(
+            id,
+            { name, slug: slugify(name) },
+            { new: true }
+        );
+
         res.status(200).send({
-            success:true,
-            message:"Brand Updated Successfully",
-            brand
-        })
-    }catch(err){
+            success: true,
+            message: 'Brand updated successfully',
+            brand,
+        });
+    } catch (err) {
         res.status(500).send({
-            success:false,
-            message:"Error in Updating Brand",
-            err
-        })
+            success: false,
+            message: 'Error in updating brand',
+            err,
+        });
     }
-}
+};
 
-const deleteBrand = async (req,res) => {
-    try{
-        const {id} = req.params
-        try{
-            for(const x of carModel_.brandPictures){
-                fs.unlink(path.join(__dirname, '../uploads/',x), (err)=> {
-                    if(err){
-                        throw err;
-                    }
-                })                
-            }
-        }catch(e){
-            console.log("Delte: " +e)
-        }
-        await brandModel.findByIdAndDelete(id)
+// Delete brand by ID
+const deleteBrand = async (req, res) => {
+    try {
+        const { id } = req.params;
+        await brandModel.findByIdAndDelete(id);
         res.status(200).send({
-            success:true,
-            message:"Brand Deleted Successfully"
-        })
-    }catch(err){
+            success: true,
+            message: 'Brand deleted successfully',
+        });
+    } catch (err) {
         res.status(500).send({
-            success:false,
-            message:"Error in Deleting Brand",
-            err
-        })
+            success: false,
+            message: 'Error in deleting brand',
+            err,
+        });
     }
-}
+};
 
-module.exports = {getBrand,getBrandById,createBrand,upload,updateBrand,deleteBrand}
+module.exports = {
+    upload,
+    createBrand,
+    getBrand,
+    getBrandById,
+    updateBrand,
+    deleteBrand,
+};

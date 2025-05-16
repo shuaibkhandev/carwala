@@ -12,7 +12,7 @@ const Register = () => {
     const [phone, setPhone] = useState("");
     const [address, setAddress] = useState("");
     const navigate = useNavigate()
-
+console.log('API URL:', process.env.REACT_APP_API_URL);
     const validateEmail = (email) => {
         const emailPattern = /^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,4}$/;
         return emailPattern.test(email);
@@ -25,6 +25,8 @@ const Register = () => {
             return false;
         }
         try {
+            console.log(name, email, password, phone, address);
+            
             const res = await axios.post(`${process.env.REACT_APP_API_URL}/api/user/register`, {
                 name, email, password, phone, address
             });
