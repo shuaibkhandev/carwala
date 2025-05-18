@@ -188,7 +188,7 @@ const CarsHome = () => {
                                                         <Link
                                                             className='btn my-2'
                                                             style={{ backgroundColor: 'blueviolet', color: 'white' }}
-                                                            to={`/car/${p.slug}`}
+                                                            to={`/car/${p?.slug}`}
                                                         >
                                                             <AiOutlineEye size={20} className='pb-1' /> View
                                                         </Link>

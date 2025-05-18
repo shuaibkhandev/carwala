@@ -18,8 +18,7 @@ const upload = multer({ storage });
 const createBrand = async (req, res) => {
     try {
         const { name } = req.body;
-        const brandPicturePath = req.file?.path;
-
+        const brandPicturePath = req.file?.filename;
         if (!name) {
             return res.status(400).send({ message: 'Brand name is required' });
         }

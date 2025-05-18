@@ -14,7 +14,8 @@ dotenv.config()
 
 connection();
 
-app.use(express.static('uploads/'));
+app.use('/images', express.static('uploads'));
+
 
 app.use('/api/user',userRoutes);
 app.use('/api/brand',brandRoutes);

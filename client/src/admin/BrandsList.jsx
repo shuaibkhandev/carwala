@@ -95,16 +95,16 @@ const CreateCategory = () => {
                                             {brands?.map(c => (
                                                 <tr>
                                                     <td>
-                                                        <img src={c.brandPictures} alt={c.name}
+                                                        <img src={`http://localhost:8000/images/${c?.brandPictures}`} alt={c?.name}
                                                             style={{ maxWidth: '100%', maxHeight: '50px', objectFit: 'contain' }}
                                                         />
                                                     </td>
                                                     <td>
-                                                        <p className="fw-normal mb-1">{c.name}</p>
+                                                        <p className="fw-normal mb-1">{c?.name}</p>
                                                     </td>
                                                     <td>
                                                         <button className='btn btn-primary m-2' onClick={() => { setVisible(true); setUpdatedName(c.name); setSelected(c) }}>Edit</button>
-                                                        <button className='btn btn-danger' onClick={() => handleDelete(c._id)}>Delete</button>
+                                                        <button className='btn btn-danger' onClick={() => handleDelete(c?._id)}>Delete</button>
                                                     </td>
                                                 </tr>
                                             ))}

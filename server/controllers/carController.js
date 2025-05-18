@@ -50,7 +50,7 @@ const createCar = async (req, res) => {
         }
 
         // Store local file paths
-        const uploadedFiles = req.files.map(file => file.path);
+        const uploadedFiles = req.files.map(file => file.filename);
 
         const slug = slugify(name);
 
