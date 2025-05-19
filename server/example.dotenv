@@ -1,0 +1,7 @@
+PORT=8000
+BRAINTREE_MERCHANT_ID=use_your_merchant_id
+BRAINTREE_PUBLIC_KEY=fakepublickey123
+BRAINTREE_PRIVATE_KEY=fakeprivatekey456
+BRAINTREE_ENVIRONMENT=Sandbox
+MONGO=mongodb+srv://welivesoft:hPjerDTskggxJrKC@cluster0.k2rfhpp.mongodb.net/carwala?retryWrites=true&w=majority&appName=Cluster0
+JWT_SECRET=123123123

@@ -37,6 +37,7 @@ const CarView = () => {
             setLoading(true);
         }
     };
+console.log(car?.productPictures[0]);
 
     const getRelatedCar = async (cid, bid) => {
         try {
@@ -77,20 +78,15 @@ const CarView = () => {
                 :
                 <div className="row">
                     <div className="col-md-6 text-center">
-                        <ReactImageTurntable
-                            images={car.productPictures}
-                            className='border border-4 rounded'
-                            style={{ cursor: '-webkit-grab' }}
-                        />
-                        <Tb360View size={50} className='' /><br />
+                
+                       
                         <div>
-                            <ImageGallery
-                                items={galleryImages}
-                                originalHeight={10}
-                                lazyLoad={true}
-                                showNav={false}
-                                showFullscreenButton={false}
-                            />
+                            <img
+                                    decoding="async"
+                                    src={`http://localhost:8000/images/${car?.productPictures[0]}`}
+                                    className="img-fluid"
+                                    style={{ maxWidth: '100%', objectFit: 'contain' }}
+                                />
                         </div>
                         <LuGalleryHorizontal size={40} className='my-3' /><br />
                     </div>
@@ -99,7 +95,7 @@ const CarView = () => {
                             <Link to={`/brand/${car.brand.name}`}>
                                 <img
                                     decoding="async"
-                                    src={car.brand.brandPictures}
+                                    src={`http://localhost:8000/images/${car.brand.brandPictures}`}
                                     className="img-fluid"
                                     style={{ maxWidth: '100%', maxHeight: '40px', objectFit: 'contain' }}
                                 />
@@ -159,54 +155,7 @@ const CarView = () => {
                             </thead>
                         </table>
                     </div>
-                    <div className="container mt-5">
-                        <div className="row">
-                            <div className="col-12 text-center mb-5">
-                                <h2 className="brand_title">Related <span style={{ color: 'blueviolet' }}>{car.brand.name}</span> Cars in Stock</h2>
-                            </div>
-                            {relatedCar.length > 0 ? (
-                                relatedCar.map((p) => (
-                                    <div className="col-md-12 col-lg-3 mb-3 mb-lg-0 my-3">
-                                        <div className="card">
-                                            <div className="d-flex justify-content-between p-3">
-                                                <p className="lead mb-0">{p.brand.name}</p>
-                                                <Link to={`/brand/${p.brand.slug}`}
-                                                    className=" rounded-circle d-flex align-items-center justify-content-center shadow-1-strong"
-                                                    style={{ width: '35px', height: '35px' }}>
-                                                    <p className="text-white mb-0 small">
-                                                        <img src={p.brand.brandPictures} alt={p.brand.name} style={{ maxWidth: '100%', maxHeight: '150px', objectFit: 'contain' }} />
-                                                    </p>
-                                                </Link>
-                                            </div>
-                                            <Link to={`/car/${p.slug}`} className='text-center'>
-                                                <img src={p.productPictures[4]} alt={p.name} style={{ maxWidth: '100%', maxHeight: '120px', objectFit: 'contain' }} className='border rounded' />
-                                            </Link>
-                                            <div className="card-body">
-                                                <h4 className="text-center mb-4">{p.name}</h4>
-                                                <div className="d-flex justify-content-between">
-                                                    <h6><PiCurrencyInrFill /> : {p.price}</h6>
-                                                    <h6 ><BsFuelPumpFill /> : {p.fuelType}</h6>
-                                                </div>
-                                                <div className="d-flex justify-content-between my-2">
-                                                    <h6 ><TbStars /> : {p.safetyrating}</h6>
-                                                    <h6 ><MdAirlineSeatReclineExtra /> : {p.seater} Seater</h6>
-                                                </div>
-                                                <div className='text-center'>
-                                                    <Link className='btn my-2  ' style={{ backgroundColor: 'blueviolet', color: 'white' }} to={`/car/${p.slug}`}><AiOutlineEye size={20} className='pb-1' /> View</Link>
-                                                    <button className='btn btn-outline-primary my-2 mx-3 ' onClick={() => { setcart([...cart, p]); localStorage.setItem('cart', JSON.stringify([...cart, p])); notify() }} ><AiOutlineShoppingCart size={20} className='pb-1' /> Add To Cart</button>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                ))
-                            ) : (
-                                <div className="col-md-12 text-center">
-                                    <h4>Currently No Related {car.brand.name} is available.</h4>
-                                </div>
-                            )}
-
-                        </div>
-                    </div>
+              
                 </div>
             }
         </div>

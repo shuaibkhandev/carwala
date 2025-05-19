@@ -112,7 +112,7 @@ const Cart = () => {
                                                                 <div>
                                                                     <Link to={`/car/${p.slug}`} className='text-center'>
                                                                         <img
-                                                                            src={`${process.env.REACT_APP_API_URL}/${p.productPictures[0]}`}
+                                                                            src={`${process.env.REACT_APP_API_URL}/images/${p.productPictures[0]}`}
                                                                             className="card-img-top"
                                                                             alt={p.name}
                                                                             style={{ maxWidth: '100%', maxHeight: '80px', objectFit: 'contain' }}

@@ -47,14 +47,14 @@ const Brandshome = () => {
                             <div className="row justify-content-center">
                                 {brands?.slice(0, 8).map(c => (
                                     <div className="col-lg-3 col-md-4 col-sm-6 mb-4 showcase_card">
-                                        <Link to={`/brand/${c.slug}`}>
+                                      
                                             <img
                                                 decoding="async"
-                                                src={c.brandPictures}
+                                                src={`http://localhost:8000/images/${c.brandPictures}`}
                                                 className="mb-4 img-fluid"
                                                 style={{ maxWidth: '100%', maxHeight: '190px', objectFit: 'contain' }}
                                             />
-                                        </Link>
+                                     
                                     </div>
                                 ))}
                             </div>

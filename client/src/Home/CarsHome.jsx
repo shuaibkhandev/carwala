@@ -65,12 +65,12 @@ const CarsHome = () => {
                                             className=" rounded-circle d-flex align-items-center justify-content-center shadow-1-strong"
                                             style={{ width: '35px', height: '35px' }}>
                                             <Link to={`/brand/${p.brand?.slug}`} className="text-white mb-0 small">
-                                                <img src={p.brand?.brandPictures} alt={p.brand?.name} style={{ maxWidth: '100%', maxHeight: '150px', objectFit: 'contain' }} />
+                                                <img src={`http://localhost:8000/images/${p?.brand?.brandPictures}`} alt={p.brand?.name} style={{ maxWidth: '100%', maxHeight: '150px', objectFit: 'contain' }} />
                                             </Link>
                                         </div>
                                     </div>
                                     <Link to={`/car/${p.slug}`} className='text-center'>
-                                        <img src={p.productPictures} alt={p?.name} style={{ maxWidth: '100%', maxHeight: '130px', objectFit: 'contain' }} className='border rounded' />
+                                        <img src={`http://localhost:8000/images/${p?.productPictures}`} alt={p?.name} style={{ maxWidth: '100%', maxHeight: '130px', objectFit: 'contain' }} className='border rounded' />
                                     </Link>
                                     <div className="card-body ">
                                         <h4 className="text-center mb-4 respName">{p.name}</h4>
