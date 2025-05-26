@@ -25,6 +25,7 @@ import CarsFilterpage from './Home/CarsFilterpage';
 import CarView from './pages/CarView';
 import { Toaster } from 'react-hot-toast';
 import CarInBrand from './pages/CarInBrand';
+import Success from './pages/Success';
 
 function App() {
   return (
@@ -40,6 +41,7 @@ function App() {
       <Route path='/cars' element={<CarsFilterpage />} />
       <Route path='/car/:slug' element={<CarView/>} />
       <Route path='/brand/:slug' element={<CarInBrand/>} />
+        <Route path='success' element={<Success/>} />
       <Route path='/*' element={<NotFound/>} />
       <Route path='/dashboard' element={<AdminRoutes/>}>
             <Route path='admin' element={<AdminDashboard/>} />

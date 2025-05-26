@@ -25,6 +25,30 @@ const CarView = () => {
     const [cart, setcart] = useCart()
     const [relatedCar, setRelatedCar] = useState([]);
     const [loading, setLoading] = useState(true);
+const handleBuyNow = async () => {
+    try {
+        const response = await axios.post(`http://localhost:8000/create-checkout-session`, {
+            name: car.name,
+            price: car.price,
+            description: car.description,
+            features: car.features || [],
+            customerName: "Ali Raza", // Replace with real user data
+            customerEmail: "ali@example.com", // Replace with real user data
+            customerPhone: "03001234567" // Replace with real user data
+        });
+        console.log(response);
+        
+
+        if (response.status === 200) {
+            window.location.href = response.data.url; // Redirect to Stripe Checkout
+        } else {
+            toast.error("Failed to create checkout session.");
+        }
+    } catch (error) {
+        console.error("Error creating checkout session:", error);
+        toast.error("Server error! Please try again.");
+    }
+};
 
     const getCar = async () => {
         try {
@@ -107,7 +131,13 @@ console.log(car?.productPictures[0]);
                         <h4>Rs. {car.price} Lakhs</h4>
                         <h4>Released At : {updatedAt}</h4>
                         <button style={{ backgroundColor: 'blueviolet' }} className='btn text-white my-1' onClick={() => { setcart([...cart, car]); localStorage.setItem('cart', JSON.stringify([...cart, car])); notify() }} ><AiOutlineShoppingCart size={20} className='pb-1' /> Add To Cart</button>
-                        <Link className='btn btn-outline-primary mx-2' to='/cart'><AiOutlineEye size={20} className='pb-1' /> View Cart</Link>
+                       <button
+    className='btn btn-outline-primary mx-2'
+    onClick={handleBuyNow}
+>
+    <AiOutlineEye size={20} className='pb-1' /> Buy Now
+</button>
+
                         <table className="table table-bordered my-4">
                             <thead>
                                 <tr>

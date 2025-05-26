@@ -14,6 +14,8 @@ const Cart = () => {
     const [instance, setInstance] = useState("");
     const [loading, setLoading] = useState(false);
     const navigate = useNavigate()
+    const [price, setPrice] = useState(0);
+
 
     const totalPrice = () => {
         try {
@@ -24,12 +26,14 @@ const Cart = () => {
             });
             return total.toLocaleString("en-US", {
                 style: "currency",
-                currency: "INR",
+                currency: "pkr",
             });
+            setPrice(total)
         } catch (error) {
             console.log(error);
         }
     };
+
 
     const removeCartItem = (pid) => {
         try {
@@ -51,29 +55,36 @@ const Cart = () => {
             console.log(error);
         }
     };
+    const handlePayment = async () => {
+    try {
+        const response = await axios.post(`http://localhost:8000/create-checkout-session`, {
+            name: "model 1",
+            price: 9000000,
+            description: "just for test",
+            features: '123',
+            customerName: "Ali Raza", // Replace with real user data
+            customerEmail: "ali@example.com", // Replace with real user data
+            customerPhone: "03001234567" // Replace with real user data
+        });
+        console.log(response);
+        
+
+        if (response.status === 200) {
+            window.location.href = response.data.url; // Redirect to Stripe Checkout
+        } else {
+            toast.error("Failed to create checkout session.");
+        }
+    } catch (error) {
+        console.error("Error creating checkout session:", error);
+        toast.error("Server error! Please try again.");
+    }
+};
+
     useEffect(() => {
         getToken();
         window.scrollTo(0, 0)
     }, [auth?.token]);
 
-    const handlePayment = async () => {
-        try {
-            setLoading(true);
-            const { nonce } = await instance.requestPaymentMethod();
-            const { data } = await axios.post(`${process.env.REACT_APP_API_URL}/api/car/braintree/payment`, {
-                nonce,
-                cart
-            });
-            setLoading(false);
-            localStorage.removeItem("cart");
-            setcart([]);
-            navigate("/dashboard/user/order");
-            toast.success("Payment Completed Successfully ");
-        } catch (error) {
-            console.log(error);
-            setLoading(false);
-        }
-    };
 
     const notify = () => toast.success('Item Removed Successfully')
 
@@ -148,67 +159,20 @@ const Cart = () => {
                                                         <p>Total | Checkout | Payment</p>
                                                         <hr />
                                                         <h4>Total : {totalPrice()} Lakhs</h4>
-                                                        {auth?.user?.address ? (
-                                                            <>
-                                                                <div className="mb-3">
-                                                                    <h4>Current Address</h4>
-                                                                    <h5>{auth?.user?.address}</h5>
-                                                                    <button
-                                                                        className="btn btn-warning my-2"
-                                                                        onClick={() => navigate("/dashboard/user/profile")}
-                                                                    >
-                                                                        Update Address
-                                                                    </button>
-                                                                </div>
-                                                            </>
-                                                        ) : (
-                                                            <div className="mb-3">
-                                                                {auth?.token ? (
-                                                                    <button
-                                                                        className="btn btn-outline-warning"
-                                                                        onClick={() => navigate("/dashboard/user/profile")}
-                                                                    >
-                                                                        Update Address
-                                                                    </button>
-                                                                ) : (
-                                                                    <button
-                                                                        className="btn btn-primary"
-                                                                        onClick={() =>
-                                                                            navigate("/login", {
-                                                                                state: "/cart",
-                                                                            })
-                                                                        }
-                                                                    >
-                                                                        Plase Login to checkout
-                                                                    </button>
-                                                                )}
-                                                            </div>
-                                                        )}
-                                                        <div className="mt-2">
-                                                            {!clientToken || !auth?.token || !cart?.length ? (
-                                                                ""
-                                                            ) : (
-                                                                <>
-                                                                    <DropIn
-                                                                        options={{
-                                                                            authorization: clientToken,
-                                                                            paypal: {
-                                                                                flow: "vault",
-                                                                            },
-                                                                        }}
-                                                                        onInstance={(instance) => setInstance(instance)}
-                                                                    />
+                                                   <button
+  className="btn btn-dark mt-3"
+  onClick={handlePayment}
+>
+  {loading ? (
+    <>
+      <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+      Processing...
+    </>
+  ) : (
+    "Make Payment"
+  )}
+</button>
 
-                                                                    <button
-                                                                        className="btn btn-dark mt-3"
-                                                                        onClick={handlePayment}
-                                                                        disabled={loading || !instance || !auth?.user?.address}
-                                                                    >
-                                                                        {loading ? "Processing ...." : "Make Payment"}
-                                                                    </button>
-                                                                </>
-                                                            )}
-                                                        </div>
                                                     </div>
                                                 </div>
                                             </div>
