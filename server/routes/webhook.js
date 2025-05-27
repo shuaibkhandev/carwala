@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const stripe = require('stripe')('sk_test_51REPg5IkYKSYdDnUyR9TQCRYzFT2ltMnP0fbR2Y74rKMOyJmXRqr4CHkFgMwzlTn1J0zy74kABzKp527LbRKUoDa00frSur56w');
+const stripe = require('stripe')(process.env.STRIPE_SECRET);
 const Customer = require('../models/customer');
 
 // Use express.raw to read raw buffer

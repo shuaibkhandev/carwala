@@ -5,4 +5,5 @@ BRAINTREE_PRIVATE_KEY=fakeprivatekey456
 BRAINTREE_ENVIRONMENT=Sandbox
 MONGO=mongodb+srv://welivesoft:hPjerDTskggxJrKC@cluster0.k2rfhpp.mongodb.net/carwala?retryWrites=true&w=majority&appName=Cluster0
 JWT_SECRET=123123123
+WEBHOOK_SECRET = "whsec_f3193d72144c25483f89fae963d792e4f9ed0dc657c16f22a1540e1b32b89495"
 STRIPE_SECRET="sk_test_51REPg5IkYKSYdDnUyR9TQCRYzFT2ltMnP0fbR2Y74rKMOyJmXRqr4CHkFgMwzlTn1J0zy74kABzKp527LbRKUoDa00frSur56w"
