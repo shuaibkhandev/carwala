@@ -100,7 +100,7 @@ const AdminOrders = () => {
                                                 </div>
                                                 <div className="col-md-8 ">
                                                     <p>{p.name}</p>
-                                                    <p>₹ {p.price} Lakhs</p>
+                                                    <p>RS {p.price} Lakhs</p>
                                                 </div>
                                             </div>
                                         ))}

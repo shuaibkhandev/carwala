@@ -28,12 +28,12 @@ const Cart = () => {
                 style: "currency",
                 currency: "pkr",
             });
-            setPrice(total)
+   
         } catch (error) {
             console.log(error);
         }
     };
-
+    
 
     const removeCartItem = (pid) => {
         try {
@@ -55,33 +55,37 @@ const Cart = () => {
             console.log(error);
         }
     };
-    const handlePayment = async () => {
-    try {
-        const response = await axios.post(`http://localhost:8000/create-checkout-session`, {
-            name: "model 1",
-            price: 9000000,
-            description: "just for test",
-            features: '123',
-            customerName: "Ali Raza", // Replace with real user data
-            customerEmail: "ali@example.com", // Replace with real user data
-            customerPhone: "03001234567" // Replace with real user data
-        });
-        console.log(response);
-        
+    
+const handlePayment = async () => {
+  try {
+    console.log(cart);
+    
+    const response = await axios.post(`http://localhost:8000/create-checkout-session-multiple`, {
+      items: cart?.map(item => ({
+        name: item.name,
+        description: item.description || "No description",
+        price: item.price
+      })),
+      
+      customerName: auth?.user?.name || "Guest",
+      customerEmail: auth?.user?.email || "guest@example.com",
+      customerPhone: "03001234567" // Replace with real user input or form field
+    });
 
-        if (response.status === 200) {
-            window.location.href = response.data.url; // Redirect to Stripe Checkout
-        } else {
-            toast.error("Failed to create checkout session.");
-        }
-    } catch (error) {
-        console.error("Error creating checkout session:", error);
-        toast.error("Server error! Please try again.");
+    if (response.status === 200) {
+      window.location.href = response.data.url;
+    } else {
+      toast.error("Failed to create checkout session.");
     }
+  } catch (error) {
+    console.error("Error creating checkout session:", error);
+    toast.error("Server error! Please try again.");
+  }
 };
 
     useEffect(() => {
         getToken();
+             setPrice(totalPrice().replace("PKR", ""))
         window.scrollTo(0, 0)
     }, [auth?.token]);
 
@@ -137,7 +141,7 @@ const Cart = () => {
                                                                 </div>
                                                             </div>
                                                             <div className="text-center">
-                                                                <p className="sizePrice"> ₹ {p.price} Lakhs</p>
+                                                                <p className="sizePrice"> RS {p.price} Lakhs</p>
                                                                 <button
                                                                     className="btn btn-danger"
                                                                     onClick={() => { removeCartItem(p._id); notify() }}

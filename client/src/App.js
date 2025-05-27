@@ -26,6 +26,7 @@ import CarView from './pages/CarView';
 import { Toaster } from 'react-hot-toast';
 import CarInBrand from './pages/CarInBrand';
 import Success from './pages/Success';
+import Customers from './admin/Customers';
 
 function App() {
   return (
@@ -47,6 +48,7 @@ function App() {
             <Route path='admin' element={<AdminDashboard/>} />
             <Route path='admin/allbrands' element={<BrandsList/>} />
             <Route path='admin/cars' element={<Cars/>} />
+            <Route path='admin/customers' element={<Customers/>} />
             <Route path='admin/create-brand' element={<CreateBrands/>} />
             <Route path='admin/create-product' element={<CreateCar/>} />
             <Route path='admin/car/:slug' element={<UpdateCar/>} />
